@@ -1,0 +1,92 @@
+/*
+//                        /-------------\
+//                       /               \
+//                      /                 \
+//                     /                   \
+//                     |   XXXX     XXXX   |
+//                     |   XXXX     XXXX   |
+//                     |   XXX       XXX   |
+//                     \         X         /
+//                      --\     XXX     /--
+//                       | |    XXX    | |
+//                       | |           | |
+//                       | I I I I I I I |
+//                       |  I I I I I I  |
+//                        \             /
+//                         --         --
+//                           \-------/
+//
+//               READ README.MD BEFORE YOU MAINTAIN
+//
+//         Do not Understand Clean Architecture it means death
+//          (see readme.md on branch master for full details)
+
+*/
+
+apply plugin: 'com.android.application'
+
+apply from: '../config/quality/quality.gradle'
+
+preBuild.dependsOn 'checkstyle'
+preBuild.dependsOn 'pmd'
+
+android {
+
+    lintOptions {
+        abortOnError true
+        xmlReport true
+        htmlReport true
+        lintConfig file("${project.rootDir}/config/quality/lint/lint.xml")
+    }
+
+    def globalConfiguration = rootProject.extensions.getByName("ext")
+
+    compileSdkVersion globalConfiguration.getAt("androidCompileSdkVersion")
+    buildToolsVersion globalConfiguration.getAt("androidBuildToolsVersion")
+
+    signingConfigs {
+        debug {
+            storeFile file("${keystore}")
+            storePassword "${keystore_password}"
+            keyAlias "${key_alias}"
+            keyPassword "${key_password}"
+        }
+    }
+
+    defaultConfig {
+        applicationId globalConfiguration.getAt("androidApplicationId")
+        minSdkVersion globalConfiguration.getAt("androidMinSdkVersion")
+        targetSdkVersion globalConfiguration.getAt("androidTargetSdkVersion")
+        versionCode globalConfiguration.getAt("androidVersionCode")
+        versionName globalConfiguration.getAt("androidVersionName")
+    }
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+            shrinkResources false
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+}
+
+
+dependencies {
+    def presentationDependencies = rootProject.ext.presentationDependencies
+    def presentationTestDependencies = rootProject.ext.presentationTestDependencies
+
+    testCompile presentationTestDependencies.junit
+
+    compile presentationDependencies.appcompat
+    compile presentationDependencies.design
+
+    compile project(':data')
+    compile project(':domain')
+}
+
